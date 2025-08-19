@@ -1,0 +1,55 @@
+package libSubsystems;
+
+import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+public class gripper extends SubsystemBase {
+
+    private final Servo mechRotation;
+    private final ElapsedTime timer = new ElapsedTime();
+
+    public enum GripperState {
+        IDLE,
+        GRABBING,
+        RELEASING
+    }
+
+    private GripperState state = GripperState.IDLE;
+
+    public gripper(HardwareMap hMap, String name) {
+        mechRotation = hMap.get(Servo.class, name);
+    }
+
+    public void grab() {
+        mechRotation.setPosition(0.76);
+        timer.reset();
+        state = GripperState.GRABBING;
+    }
+
+    public void release() {
+        mechRotation.setPosition(0);
+        timer.reset();
+        state = GripperState.RELEASING;
+    }
+
+    // Call this every loop to handle state transitions
+    public void update() {
+        switch (state) {
+            case GRABBING:
+            case RELEASING:
+                if (timer.seconds() >= 0.5) { // wait for servo to finish moving
+                    state = GripperState.IDLE;
+                }
+                break;
+            case IDLE:
+            default:
+                break;
+        }
+    }
+
+    public GripperState getState() {
+        return state;
+    }
+}
