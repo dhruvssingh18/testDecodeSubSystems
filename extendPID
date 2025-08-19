@@ -1,0 +1,69 @@
+package libSubsystems;
+
+import com.arcrobotics.ftclib.controller.PIDFController;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.arcrobotics.ftclib.command.SubsystemBase;
+
+public class extend extends SubsystemBase {
+
+    private final DcMotorEx arm;
+    private final PIDFController controller;
+
+    private final double ticksInDegree = 700.0 / 180.0;
+
+    // PIDF values
+    public double p = 0, i = 0, d = 0, f = 0;
+
+    // Target position in encoder ticks
+    private int target = 0;
+
+    public extend(final HardwareMap hMap) {
+        this.arm = hMap.get(DcMotorEx.class, "arm");
+        this.controller = new PIDFController(p, i, d, f);
+
+        // Reset encoder (optional, depends on setup)
+        arm.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        arm.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+    }
+
+    // Set PIDF constants dynamically
+    public void setPIDF(double p, double i, double d, double f) {
+        this.p = p;
+        this.i = i;
+        this.d = d;
+        this.f = f;
+        controller.setPIDF(p, i, d, f);
+    }
+
+    // Set target position in degrees
+    public void setTargetDegrees(double degrees) {
+        this.target = (int) (degrees * ticksInDegree);
+    }
+
+    // Set target position in encoder ticks
+    public void setTargetTicks(int ticks) {
+        this.target = ticks;
+    }
+
+    // Call in loop to update motor power
+    public void update() {
+        int armPos = arm.getCurrentPosition();
+        double pid = controller.calculate(armPos, target);
+
+        // feedforward based on gravity (using current arm position)
+        double ff = Math.cos(Math.toRadians(armPos / ticksInDegree)) * f;
+
+        arm.setPower(pid + ff);
+    }
+
+    // Get current arm position
+    public int getCurrentPosition() {
+        return arm.getCurrentPosition();
+    }
+
+    // Get current target
+    public int getTarget() {
+        return target;
+    }
+}
