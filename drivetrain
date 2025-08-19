@@ -1,0 +1,55 @@
+package libSubsystems;
+
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
+
+import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
+public class drivetrain extends SubsystemBase {
+
+    private final DcMotor frontLeft, frontRight, backLeft, backRight;
+
+    public drivetrain(final HardwareMap hMap) {
+        frontLeft = hMap.get(DcMotor.class, "frontLeft");
+        frontRight = hMap.get(DcMotor.class, "frontRight");
+        backLeft = hMap.get(DcMotor.class, "backLeft");
+        backRight = hMap.get(DcMotor.class, "backRight");
+    }
+
+    public void strafeRight(double power) {
+        frontLeft.setPower(power);
+        backLeft.setPower(-power);
+        frontRight.setPower(-power);
+        backRight.setPower(power);
+    }
+
+    public void strafeLeft(double power) {
+        frontLeft.setPower(-power);
+        backLeft.setPower(power);
+        frontRight.setPower(power);
+        backRight.setPower(-power);
+    }
+
+    public void driveForward(double power) {
+        setAllDrivePower(power);
+    }
+
+    public void driveBackward(double power) {
+        setAllDrivePower(-power);
+    }
+
+    public void tankDrive() {
+        frontLeft.setPower(-gamepad1.left_stick_y);
+        frontRight.setPower(-gamepad1.right_stick_y);
+        backLeft.setPower(-gamepad1.left_stick_y);
+        backRight.setPower(-gamepad1.right_stick_y);
+    }
+
+    public void setAllDrivePower(double power) {
+        frontLeft.setPower(power);
+        backLeft.setPower(power);
+        frontRight.setPower(power);
+        backRight.setPower(power);
+    }
+}
