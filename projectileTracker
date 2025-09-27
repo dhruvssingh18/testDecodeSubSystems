@@ -1,0 +1,100 @@
+package OpModes.testing.vision;
+
+import static com.sun.tools.doclint.Entity.pi;
+
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+
+@TeleOp(name="AutoTrackingAlgorithm")
+
+public class AutoTrackingAlgorithm extends LinearOpMode {
+
+    private Limelight3A limelight;
+    public double velLaunch; //Launch Velocity
+    public double gravity = 9.81; //gravity in m/s
+
+    DcMotor flywheel;
+
+    @Override
+    public void runOpMode() throws InterruptedException
+    {
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        flywheel = hardwareMap.get(DcMotor.class, "flywheel");
+
+        telemetry.setMsTransmissionInterval(11);
+
+        limelight.pipelineSwitch(0); //TargetTrackerMotion
+
+        limelight.start();
+
+        while (opModeIsActive()) {
+            LLResult result = limelight.getLatestResult();
+
+            if (result != null) {
+                if (result.isValid()) {
+                    Pose3D botpose = result.getBotpose();
+
+                    double tx = result.getTx();
+                    double ty = result.getTy();
+
+                    telemetry.addData("tx", tx);
+                    telemetry.addData("ty", ty);
+                    telemetry.addData("Botpose", botpose.toString());
+
+                    double targetOffsetAngle_Vertical = ty;  // <-- already a double
+                    double limelightMountAngleDegrees = 25.0;  // camera mount angle
+                    double limelightLensHeightInches = 20.0;   // lens height above floor
+                    double goalHeightInches = 60.0;            // target height above floor
+
+                    // Total vertical angle = camera mount + target offset
+                    double angleToGoalDegrees = limelightMountAngleDegrees + targetOffsetAngle_Vertical;
+                    double angleToGoalRadians = Math.toRadians(angleToGoalDegrees);
+
+
+                    double verticalDisp = 0.0254 * (goalHeightInches - limelightLensHeightInches); //Vertical Displacement: y-component
+
+                    // Calculate horizontal distance to target
+                    double hortDispInches =
+                            (goalHeightInches - limelightLensHeightInches) / Math.tan(angleToGoalRadians);
+
+                    double hortDisp = 0.0254 * hortDispInches;
+
+                    telemetry.addData("horizontal displacement", hortDisp);
+
+                    double num = gravity * (hortDisp * hortDisp);
+                    double den = 2 * Math.pow(Math.cos(angleToGoalRadians), 2) *
+                            (hortDisp * Math.tan(angleToGoalRadians) - verticalDisp);
+
+                    velLaunch = Math.sqrt(num/den);
+                    telemetry.addData("Velocity Launch", velLaunch);
+
+                }
+            }
+
+            if(gamepad1.a){
+
+                //review: https://docs.seattlesolvers.com/features/hardware/motors
+                //future we need to use pid tuner to control velocity
+                //in ticks per second
+
+                double wheelRad = 2;
+                double motorRPM = 350;
+                double calcRPM = (velLaunch / (2 * Math.PI * wheelRad)) * 60;
+                telemetry.addData("RPM", calcRPM);
+
+                double coef = Math.round((calcRPM / motorRPM) * 100.0) / 100.0; //rounded value of coefficient
+                telemetry.addData("velocity coefficient", coef);
+
+                flywheel.setPower(coef + 0.07); //add a 0.05 tolerance: adjust if needed
+
+            }
+
+
+        }
+    }
+}
