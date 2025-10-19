@@ -1,0 +1,92 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+@TeleOp(name = "Test Drive", group = "Robot")
+
+public class LM0 extends LinearOpMode {
+
+    private DcMotor RM, LM, BLM, BRM, Shooter;
+    private CRServo LS, RS;
+
+    private double tuner = 0.5;
+
+    long currentTime = System.currentTimeMillis();
+
+    private boolean delayPull;
+
+    boolean lastY = false;
+    boolean lastX = false;
+
+    public void runOpMode() throws InterruptedException
+    {
+        RM = hardwareMap.dcMotor.get("rm");
+        LM = hardwareMap.dcMotor.get("lm");
+        BLM = hardwareMap.dcMotor.get("blm");
+        BRM = hardwareMap.dcMotor.get("brm");
+        Shooter = hardwareMap.dcMotor.get("shooter");
+        RS = hardwareMap.crservo.get("rs");
+        LS = hardwareMap.crservo.get("ls");
+
+        waitForStart();
+
+        while (opModeIsActive()){
+
+
+            if (gamepad1.right_bumper){
+                RM.setPower(-1);
+                BRM.setPower(1);
+                LM.setPower(-1);
+                BLM.setPower(1);
+            }
+            else if (gamepad1.left_bumper){
+                RM.setPower(1);
+                BRM.setPower(-1);
+                LM.setPower(1);
+                BLM.setPower(-1);
+            }
+            else {
+                RM.setPower(-gamepad1.right_stick_y);
+                LM.setPower(gamepad1.left_stick_y);
+                BRM.setPower(-gamepad1.right_stick_y);
+                BLM.setPower(gamepad1.left_stick_y);
+
+            }
+
+
+            if (gamepad1.a){
+                Shooter.setPower(0.62);
+                RS.setPower(1);
+                LS.setPower(-1);
+
+                delayPull = true;
+            }
+            else if (gamepad1.b){
+                Shooter.setPower(-1);
+                RS.setPower(-1);
+                LS.setPower(1);
+            }
+            else {
+                Shooter.setPower(0);
+                RS.setPower(0);
+                LS.setPower(0);
+            }
+
+
+            if(delayPull){
+                if(System.currentTimeMillis() - currentTime <1000){
+                    RS.setPower(-1);
+                    LS.setPower(1);
+
+                    delayPull = false;
+                }
+
+            }
+        }
+    }
+
+}
